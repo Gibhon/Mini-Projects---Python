@@ -63,13 +63,15 @@ def train(X : np.ndarray, y : np.ndarray, epochs : int, lr : float) -> None:
         layer1.biases  -= lr * layer1.grad_biases
         layer2.weights -= lr * layer2.grad_weights
         layer2.biases  -= lr * layer2.grad_biases
-        if(epoch % 200 == 0):
-            print(loss)
+        # if(epoch % 200 == 0):
+        #     print(loss)
+    test = np.array([[2.0, 6.0], [8.0, 7.0]])
+    print(sigmoid(layer2.forward(relu(layer1.forward(test)))))
     
-        
-        
-        
-        
+def predict(X: np.ndarray, layer1: Layer, layer2: Layer) -> np.ndarray:
+    out = relu(layer1.forward(X))
+    out = sigmoid(layer2.forward(out))
+    return out
 
 X = np.array([[2.0, 6.0], [8.0, 7.0], [1.0, 5.0], [9.0, 8.0]])
 y = np.array([0.0, 1.0, 0.0, 1.0])
