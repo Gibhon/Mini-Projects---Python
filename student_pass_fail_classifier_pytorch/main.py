@@ -42,7 +42,7 @@ model = StudentClassifier(2, 4)
 loss_fn = nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr = 1)
 
-for epoch in range(10001):
+for epoch in range(1000):
     optimizer.zero_grad(set_to_none= True) # it help save memory of internal grads and set to none just makes the default to 0 setting to just delete the internal grads
     
     # prediction = model.forward(x)  Looks like it is related to wrapper and something called __call__ which makes the traditional method calling inaccurate
@@ -53,6 +53,11 @@ for epoch in range(10001):
     loss.backward()
     optimizer.step()
     
-    if(epoch % 1000 == 0):
-        print(f"Loss at {epoch} epoch : {loss}")
+    # if(epoch % 1000 == 0):
+    #     print(f"Loss at {epoch} epoch : {loss}")
+        
+with torch.no_grad():
+    predictions = model(x_scaled)
+    print(f"Predictions : {torch.round(predictions).squeeze(1)}")
+    print(f"Actual: {y}")
     
