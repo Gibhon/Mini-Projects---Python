@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import random_split
 
 eps = 1e-7
 
@@ -18,8 +19,7 @@ x = torch.tensor(
 mean_x = x.mean(dim=0)
 std_x = x.std(dim=0)
 x_scaled = (x - mean_x) / (std_x + eps)
-
-y = torch.tensor([1.0, 1.0, 1.0, 0.0, 0.0, 0.0], dtype=torch.float32)  #The defualt type itself is float32 so it is kindof redundant
+y = torch.tensor([1.0, 1.0, 1.0, 0.0, 0.0, 0.0], dtype=torch.float32)  
 
 
 class StudentDataset(Dataset):
@@ -38,7 +38,15 @@ class StudentDataset(Dataset):
         return x, y
 
 dataset = StudentDataset(x_scaled, y)
-train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+train_set, val_set = random_split(
+    dataset, 
+    lengths=[0.8, 0.2],
+    generator=torch.Generator().manual_seed(42)
+)
+train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_set, batch_size=32, shuffle=True)
+
+
 class StudentClassifier(nn.Module):
     def __init__(self, n_inputs : int, n_neurons : int):
         super().__init__() 
@@ -73,14 +81,18 @@ for epoch in range(100):
         
         epoch_loss += loss.item()
         
-    if(epoch % 10 == 0):
-        print(epoch_loss)
+ 
+        
+    val_loss = 0
+
+    with torch.no_grad():
+        for x_batch, y_batch in val_loader:
+            predictions = model(x_batch)
+            loss = loss_fn(predictions, y_batch.unsqueeze(1))
+            val_loss += loss.item()
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch} | Train Loss: {epoch_loss:.4f} | Val Loss: {val_loss:.4f}")
         
     
-    
-        
-with torch.no_grad():
-    predictions = model(x_scaled)
-    print(f"Predictions : {torch.round(predictions).squeeze(1)}")
-    print(f"Actual: {y}")
+
     
