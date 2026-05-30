@@ -56,7 +56,7 @@ loss_fn = nn.BCELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
-for epoch in range(1000):
+for epoch in range(400):
     epoch_loss = 0
     val_loss = 0
     accurate_guess_counter = 0
@@ -69,8 +69,8 @@ for epoch in range(1000):
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
-    with torch.no_grad():
         
+    with torch.no_grad():
         for x_batch, y_batch in val_set_loader:
             prediction_val = model.forward(x_batch)
             loss = loss_fn(prediction_val, y_batch)
@@ -87,3 +87,33 @@ for epoch in range(1000):
                 
     if(epoch % 100 == 0):
         print(f"Epoch : {epoch} \n Epoch_loss : {epoch_loss / len(train_set_loader)} \n Val_Loss : {val_loss/ len(val_set_loader)} \n Accuracy : {accurate_guess_counter/total_counter}")
+        
+        
+# After training, save the model weights to a file using torch.save
+# Write a separate loading section that loads the weights back into a fresh model
+# Run inference on the val set with the loaded model and confirm accuracy matches
+torch.save(model.state_dict(), r"C:\Users\Acer\Documents\Code-Main\Python\Mini-Projects\diabetes_test\data\diabetes_weights.pth")
+
+model.load_state_dict(torch.load(r'C:\Users\Acer\Documents\Code-Main\Python\Mini-Projects\diabetes_test\data\diabetes_weights.pth'))
+model.eval()
+
+
+
+with torch.no_grad():
+    accurate_guess_counter = 0
+    total_counter = 0
+    for x_batch, y_batch in val_set_loader:
+        prediction_val = model.forward(x_batch)
+        loss = loss_fn(prediction_val, y_batch)
+        val_loss += loss.item()
+            # if(prediction_val == y_batch):
+            #     accurate_guess_counter += 1
+            # matches = (prediction_val == y_batch)
+        prediction_labels = (prediction_val >= 0.5).float()
+        prediction_labels = prediction_labels.view(-1)
+        y_batch = y_batch.view(-1)
+        matches = (prediction_labels == y_batch)
+        accurate_guess_counter += matches.sum().item()
+        total_counter += y_batch.size(0)
+    print(f"Epoch : {epoch} \n Epoch_loss : {epoch_loss / len(train_set_loader)} \n Val_Loss : {val_loss/ len(val_set_loader)} \n Accuracy : {accurate_guess_counter/total_counter}")
+        
