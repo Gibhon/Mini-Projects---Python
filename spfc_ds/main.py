@@ -92,7 +92,3 @@ for epoch in range(100):
             val_loss += loss.item()
     if epoch % 10 == 0:
         print(f"Epoch {epoch} | Train Loss: {epoch_loss:.4f} | Val Loss: {val_loss:.4f}")
-        
-    
-
-    
