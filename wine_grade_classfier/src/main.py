@@ -44,7 +44,7 @@ class WineClassifier(nn.Module):
         self.layer1 = nn.Linear(in_features=  n_inputs, out_features= n_neurons)
         self.layer2 = nn.Linear(in_features= n_neurons, out_features= 3)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(p=0.3)   
+        self.dropout = nn.Dropout(p=0.1)   
     def forward(self, inputs):
         inputs = self.layer1(inputs)
         inputs = self.relu(inputs)
@@ -98,11 +98,10 @@ train_set_loader = DataLoader(train_set, shuffle=True, batch_size=32)
 val_set_loader = DataLoader(val_set, shuffle=False, batch_size=32)
 
 torch.manual_seed(42)
-model = WineClassifier(11, 20)
+model = WineClassifier(11, 30)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = 0.01, weight_decay=1e-4)
 
 # train_model(100, model, train_set_loader, loss_fn, optimizer)
 
 val_model(model, val_set_loader, loss_fn)
-
