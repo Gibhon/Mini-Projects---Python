@@ -1,0 +1,35 @@
+# Data & models
+**/data/
+**/*.pth
+**/*.pt
+**/*.ckpt
+**/*.pkl
+**/*.h5
+
+# Python
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Env
+.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+Transfer Learning with a Pretrained Model/
+*.tar.gz
