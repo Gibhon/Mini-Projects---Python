@@ -1,35 +1,50 @@
-# Data & models
+# =========================
+# Data & ML Models
+# =========================
+data/
 **/data/
-**/*.pth
-**/*.pt
-**/*.ckpt
-**/*.pkl
-**/*.h5
 
+*.pth
+*.pt
+*.ckpt
+*.pkl
+*.h5
+*.tar
+*.tar.gz
+*.zip
+
+# =========================
 # Python
+# =========================
 __pycache__/
 **/__pycache__/
+
 *.pyc
 *.pyo
 *.pyd
 .Python
 
+# =========================
 # Jupyter
+# =========================
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 
-# Env
+# =========================
+# Environment
+# =========================
 .env
 venv/
 .venv/
 
-# OS
+# =========================
+# OS files
+# =========================
 .DS_Store
 Thumbs.db
 
+# =========================
 # IDEs
+# =========================
 .vscode/
 .idea/
-
-Transfer Learning with a Pretrained Model/
-*.tar.gz
