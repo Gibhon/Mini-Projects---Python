@@ -2,12 +2,13 @@ import time
 
 import torch
 from torch import nn
+from torch.utils.checkpoint import checkpoint as cp
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, use_cp=True):
         super().__init__()
 
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
@@ -15,6 +16,8 @@ class ResidualBlock(nn.Module):
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU()
+
+        self.use_cp = use_cp
 
         self.shortcut = nn.Sequential()
         if in_channels != out_channels:
@@ -26,15 +29,23 @@ class ResidualBlock(nn.Module):
     def forward(self, inputs):
         identity = self.shortcut(inputs)
 
-        outputs = self.relu(self.bn1(self.conv1(inputs)))
-        outputs = self.bn2(self.conv2(outputs))
+        def residual_segment(inputs):
+            outputs = self.relu(self.bn1(self.conv1(inputs)))
+            outputs = self.bn2(self.conv2(outputs))
+            return outputs
+
+        if self.use_cp:
+            outputs = cp(residual_segment, inputs, use_reentrant=False)
+        else:
+            outputs = residual_segment(inputs)
+
         outputs += identity
 
         return self.relu(outputs)
 
 
 class CNNModel(nn.Module):
-    def __init__(self, n_inputs=4096, n_neurons=256):
+    def __init__(self, n_inputs=4096, n_neurons=256, use_cp=True):
         super().__init__()
 
         self.layer1 = nn.Linear(n_inputs, n_neurons)
@@ -49,8 +60,8 @@ class CNNModel(nn.Module):
         self.flatten = nn.Flatten()
         self.dropout = nn.Dropout(p=0.3)
 
-        self.res1 = ResidualBlock(32, 32)
-        self.res2 = ResidualBlock(64, 64)
+        self.res1 = ResidualBlock(32, 32, use_cp)
+        self.res2 = ResidualBlock(64, 64, use_cp)
 
     def forward(self, inputs):
         outputs = self.maxpool(self.res1(self.relu(self.bn1(self.conv1(inputs)))))
@@ -96,6 +107,7 @@ def train_model(
     n_accurate = 0
     n_total = 0
     scaler = torch.amp.GradScaler(device.type) if with_amp else None
+    torch.cuda.reset_peak_memory_stats()
     for epoch in range(n_epoch):
         for x_batch, y_batch in train_set_loader:
             x_batch = x_batch.to(device)
@@ -111,15 +123,19 @@ def train_model(
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
+                peak_mem = torch.cuda.max_memory_allocated() / (1024**2)
             else:
                 loss.backward()
                 optimizer.step()
+                peak_mem = torch.cuda.max_memory_allocated() / (1024**2)
 
             total_loss += loss.item()
             n_total += predictions.size(0)
             _, pred_labels = torch.max(predictions, 1)
             n_accurate += (pred_labels == y_batch).sum().item()
         scheduler.step()
+
+        print(f"Max_memory: {peak_mem:.2f}MB")
     final_time = time.time() - start
     Accuracy = (n_accurate / n_total) * 100
     return (final_time, Accuracy)
@@ -170,7 +186,7 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     model1 = CNNModel().to(device)
     torch.manual_seed(42)
-    model2 = CNNModel().to(device)
+    model2 = CNNModel(use_cp=False).to(device)
 
     loss_fn = nn.CrossEntropyLoss()
     optimizer1 = torch.optim.Adam(model1.parameters(), weight_decay=1e-4, lr=1e-3)
@@ -178,13 +194,15 @@ if __name__ == "__main__":
     scheduler1 = torch.optim.lr_scheduler.StepLR(optimizer1, step_size=30, gamma=0.1)
     scheduler2 = torch.optim.lr_scheduler.StepLR(optimizer2, step_size=30, gamma=0.1)
 
-    model_withamp = train_model(
-        model1, 5, train_set_loader, loss_fn, optimizer1, device, scheduler1, True
+    print("Model with checkpoint")
+    model_withcp = train_model(
+        model1, 5, train_set_loader, loss_fn, optimizer1, device, scheduler1, False
     )
-    model_withoutamp = train_model(
+    print("Model without checkpoint")
+    model_withoutcp = train_model(
         model2, 5, train_set_loader, loss_fn, optimizer2, device, scheduler2, False
     )
-    print("FP32")
-    print(f"Time:{model_withoutamp[0]} \n Accuracy: {model_withoutamp[1]}")
-    print("AMP")
-    print(f"Time:{model_withamp[0]} \n Accuracy: {model_withamp[1]}")
+    print("With_CP")
+    print(f"Time:{model_withcp[0]} \n Accuracy: {model_withcp[1]}")
+    print("Without_CP")
+    print(f"Time:{model_withoutcp[0]} \n Accuracy: {model_withoutcp[1]}")
