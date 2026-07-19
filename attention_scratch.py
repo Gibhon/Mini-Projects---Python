@@ -18,7 +18,6 @@ def attention(x, query_transformer, key_transformer, value_transformer):
     weights = torch.softmax(raw_weights, dim=1)
 
     output = torch.matmul(weights, value_tensor)
-
     return output
 
 
