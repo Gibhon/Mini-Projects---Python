@@ -73,4 +73,4 @@ if __name__ == "__main__":
     ltsm_model = LSTMSequence(input_size, hidden_size, output_size)
     output = ltsm_model(inputs)
 
-    print(output)
+    print(output.shape)

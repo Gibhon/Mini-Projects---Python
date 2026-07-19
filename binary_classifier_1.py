@@ -64,7 +64,7 @@ torch.manual_seed(42)
 model = StudentClassifier(2, 4)
 
 loss_fn = nn.BCELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1)
+optimizer = torch.optim.SGD(model.parameters(), lr=1, weight_decay=1e-4)
 
 for epoch in range(100):
     epoch_loss = 0
