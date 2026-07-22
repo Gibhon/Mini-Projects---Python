@@ -15,13 +15,14 @@ class LSTMFromScratch(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, x, h_prev, c_prev):
-        # x: [batch, input_size]
-        # h_prev, c_prev: [batch, hidden_size
 
         combined = torch.cat([x, h_prev], dim=1)
+        # x = (batch_size=4, input_size = 10) concats with (4,20) to make (4,20+10) = (4, 30)
 
-        f_g = self.sigmoid(self.forget_gate(combined))
-        i_g = self.sigmoid(self.input_gate(combined))
+        f_g = self.sigmoid(self.forget_gate(combined))  # (4, 30) * (30, 20) => (4, 20)
+        i_g = self.sigmoid(
+            self.input_gate(combined)
+        )  # (4, 30) * (30, 20) => (4, 20) and so on
         o_g = self.sigmoid(self.output_gate(combined))
         c = self.tanh(self.candidate(combined))
 
@@ -54,10 +55,6 @@ class LSTMSequence(nn.Module):
         output = self.fc(h)
 
         return output
-
-        # TODO: loop over seq_len, slice x_t = x[:, t, :], update h and c
-
-        # TODO: pass final h through self.fc, return output
 
 
 if __name__ == "__main__":

@@ -10,14 +10,18 @@ W_v = torch.randn(d_model, d_model)
 
 
 def attention(x, query_transformer, key_transformer, value_transformer):
-    query_tensor = torch.matmul(x, query_transformer)
+    query_tensor = torch.matmul(x, query_transformer)  # (seq, d_model)
     key_tensor = torch.matmul(x, key_transformer)
     value_tensor = torch.matmul(x, value_transformer)
 
-    raw_weights = torch.matmul(query_tensor, key_tensor.T) / (d_model**0.5)
+    raw_weights = torch.matmul(query_tensor, key_tensor.T) / (
+        d_model**0.5
+    )  # (seq, d_model) @ (d_model, seq)
     weights = torch.softmax(raw_weights, dim=1)
 
-    output = torch.matmul(weights, value_tensor)
+    output = torch.matmul(
+        weights, value_tensor
+    )  # (seq, seq) @ (seq, d_model) => (seq, d_model)
     return output
 
 
